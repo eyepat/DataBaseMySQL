@@ -4,6 +4,7 @@ package se.kth.Bahaa.booksdb.model;
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Representation of a book.
@@ -18,6 +19,8 @@ public class Book {
     private Date published;
     private String storyLine = "";
     private List<Author> authors; // Lägg till en lista av författare
+    private String genre; // Added field for genre
+    private int rating; // Added field for rating
     // TODO: 
     // Add authors, as a separate class(!), and corresponding methods, to your implementation
     // as well, i.e. "private ArrayList<Author> authors;"
@@ -45,7 +48,12 @@ public class Book {
         this.storyLine = storyLine;
     }
     // Metoder för att hantera författarlista
+    public String getGenre() { return genre; } // Getter for genre
+    public void setGenre(String genre) { this.genre = genre; } // Setter for genre
 
+    public int getRating() { return rating; } // Getter for rating
+    public void setRating(int rating)
+    { this.rating = rating; }
 
     public void addAuthor(Author author) {
         if (!authors.contains(author)) {
@@ -56,6 +64,11 @@ public class Book {
         authors.remove(author);
     }
 
+    public String getAuthorNames() {
+        return authors.stream()
+                .map(Author::getName)
+                .collect(Collectors.joining(", "));
+    }
 
     @Override
     public String toString() {

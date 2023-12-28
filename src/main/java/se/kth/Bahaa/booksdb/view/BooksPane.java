@@ -1,7 +1,10 @@
 package se.kth.Bahaa.booksdb.view;
 
 import java.sql.Date;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -10,10 +13,8 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
+import se.kth.Bahaa.booksdb.model.Author;
 import se.kth.Bahaa.booksdb.model.Book;
 import se.kth.Bahaa.booksdb.model.BooksDbMockImpl;
 import se.kth.Bahaa.booksdb.model.SearchMode;
@@ -33,7 +34,7 @@ public class BooksPane extends VBox {
     private ComboBox<SearchMode> searchModeBox;
     private TextField searchField;
     private Button searchButton;
-
+    private ObservableList<Author> authorList = FXCollections.observableArrayList();
     private MenuBar menuBar;
 
     public BooksPane(BooksDbMockImpl booksDb) {
@@ -51,11 +52,11 @@ public class BooksPane extends VBox {
         booksInTable.clear();
         booksInTable.addAll(books);
     }
-    
+
     /**
      * Notify user on input error or exceptions.
-     * 
-     * @param msg the message
+     *
+     * @param msg  the message
      * @param type types: INFORMATION, WARNING et c.
      */
     protected void showAlertAndWait(String msg, Alert.AlertType type) {
@@ -96,7 +97,11 @@ public class BooksPane extends VBox {
         TableColumn<Book, String> titleCol = new TableColumn<>("Title");
         TableColumn<Book, String> isbnCol = new TableColumn<>("ISBN");
         TableColumn<Book, Date> publishedCol = new TableColumn<>("Published");
-        booksTable.getColumns().addAll(titleCol, isbnCol, publishedCol);
+        TableColumn<Book, String> authorCol = new TableColumn<>("Authors");
+        TableColumn<Book, String> genreCol = new TableColumn<>("Genre");
+        TableColumn<Book, Integer> ratingCol = new TableColumn<>("Rating");
+        booksTable.getColumns().addAll(titleCol, isbnCol, publishedCol, authorCol, genreCol, ratingCol);
+
         // give title column some extra space
         titleCol.prefWidthProperty().bind(booksTable.widthProperty().multiply(0.5));
 
@@ -105,7 +110,10 @@ public class BooksPane extends VBox {
         titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
         isbnCol.setCellValueFactory(new PropertyValueFactory<>("isbn"));
         publishedCol.setCellValueFactory(new PropertyValueFactory<>("published"));
-        
+        authorCol.setCellValueFactory(new PropertyValueFactory<>("authorNames"));
+        genreCol.setCellValueFactory(new PropertyValueFactory<>("genre"));
+        ratingCol.setCellValueFactory(new PropertyValueFactory<>("rating"));
+
         // associate the table view with the data
         booksTable.setItems(booksInTable);
     }
@@ -117,7 +125,8 @@ public class BooksPane extends VBox {
         searchModeBox.getItems().addAll(SearchMode.values());
         searchModeBox.setValue(SearchMode.Title);
         searchButton = new Button("Search");
-        
+
+
         // event handling (dispatch to controller)
         searchButton.setOnAction(new EventHandler<ActionEvent>() {
             @Override
@@ -133,6 +142,9 @@ public class BooksPane extends VBox {
 
         Menu fileMenu = new Menu("File");
         MenuItem exitItem = new MenuItem("Exit");
+        exitItem.setOnAction(e -> Controller.exitProgram());
+
+
         MenuItem connectItem = new MenuItem("Connect to Db");
         MenuItem disconnectItem = new MenuItem("Disconnect");
         fileMenu.getItems().addAll(exitItem, connectItem, disconnectItem);
@@ -145,6 +157,7 @@ public class BooksPane extends VBox {
 
         Menu manageMenu = new Menu("Manage");
         MenuItem addItem = new MenuItem("Add");
+        addItem.setOnAction(e -> showAddBookDialog());
         MenuItem removeItem = new MenuItem("Remove");
         MenuItem updateItem = new MenuItem("Update");
         manageMenu.getItems().addAll(addItem, removeItem, updateItem);
@@ -152,4 +165,91 @@ public class BooksPane extends VBox {
         menuBar = new MenuBar();
         menuBar.getMenus().addAll(fileMenu, searchMenu, manageMenu);
     }
+
+
+
+    private void showAddBookDialog() {
+        // Create the custom dialog.
+        Dialog<Book> dialog = new Dialog<>();
+        dialog.setTitle("Add New Book");
+
+        // Set the button types.
+        ButtonType addButtonType = new ButtonType("Add", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+
+        // Create the book form.
+        GridPane gridPane = new GridPane();
+        gridPane.setHgap(10);
+        gridPane.setVgap(10);
+        gridPane.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField titleField = new TextField();
+        titleField.setPromptText("Title");
+        TextField isbnField = new TextField();
+        isbnField.setPromptText("ISBN");
+        DatePicker publishedPicker = new DatePicker();
+        TextField genreField = new TextField();
+        genreField.setPromptText("Genre");
+
+        ComboBox<Integer> ratingComboBox = new ComboBox<>();
+        ratingComboBox.getItems().addAll(1, 2, 3, 4, 5);
+        ratingComboBox.setValue(1); // Default rating
+
+        ListView<Author> authorsListView = new ListView<>(authorList);
+        TextField authorNameField = new TextField();
+        authorNameField.setPromptText("Author's Name");
+        Button addAuthorButton = new Button("Add Author");
+        addAuthorButton.setOnAction(e -> {
+            Author newAuthor = new Author(authorNameField.getText()); // Assuming a constructor that takes a name
+            authorList.add(newAuthor);
+            authorNameField.clear();
+        });
+
+        // Add components to the grid
+        gridPane.add(new Label("Title:"), 0, 0);
+        gridPane.add(titleField, 1, 0);
+        gridPane.add(new Label("ISBN:"), 0, 1);
+        gridPane.add(isbnField, 1, 1);
+        gridPane.add(new Label("Published Date:"), 0, 2);
+        gridPane.add(publishedPicker, 1, 2);
+        gridPane.add(new Label("Genre:"), 0, 3);
+        gridPane.add(genreField, 1, 3);
+        gridPane.add(authorNameField, 1, 5);
+        gridPane.add(addAuthorButton, 2, 5);
+        gridPane.add(new Label("Rating:"), 0, 6);
+        gridPane.add(ratingComboBox, 1, 6);
+
+        dialog.getDialogPane().setContent(gridPane);
+
+        // Convert the result to a Book when the add button is clicked.
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == addButtonType) {
+                String title = titleField.getText();
+                String isbn = isbnField.getText();
+                LocalDate publishedDate = publishedPicker.getValue();
+                Date published = Date.valueOf(publishedDate);
+
+                Book newBook = new Book(isbn, title, published);
+
+                authorList.forEach(newBook::addAuthor);
+
+                String genre = genreField.getText();
+                newBook.setGenre(genre);
+
+                int rating = ratingComboBox.getValue();
+                newBook.setRating(rating);
+
+                return newBook;
+            }
+            return null;
+        });
+
+        // Show the dialog and capture the result.
+        Optional<Book> result = dialog.showAndWait();
+        result.ifPresent(book -> {
+            // Handle the result (add the book to the database)
+            Controller.addNewBook(book);
+        });
+    }
+
 }

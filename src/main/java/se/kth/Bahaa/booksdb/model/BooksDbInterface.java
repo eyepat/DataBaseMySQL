@@ -30,7 +30,7 @@ public interface BooksDbInterface {
 
     //me
     void addBook(Book book) throws BooksDbException;
-    void addAuthor(Author author) throws BooksDbException;
+
     void updateBook(Book book) throws BooksDbException;
     void deleteBook(int bookId) throws BooksDbException;
     void deleteAuthor(int authorId) throws BooksDbException;
@@ -38,12 +38,13 @@ public interface BooksDbInterface {
     List<Book> searchBooksByTitle(String title) throws BooksDbException;
 
         List<Book> searchBooksByAuthor(String authorName) throws BooksDbException;
-        Book searchBookByISBN(String isbn) throws BooksDbException;
+        List<Book> searchBookByISBN(String isbn) throws BooksDbException;
         List<Book> searchBooksByGenre(String genre) throws BooksDbException;
+    List<Book> searchBooksByRating(int raiting) throws BooksDbException;
 
 
 
-    
-    // TODO: Add abstract methods for all inserts, deletes and queries 
+
+    // TODO: Add abstract methods for all inserts, deletes and queries
     // mentioned in the instructions for the assignement.
 }

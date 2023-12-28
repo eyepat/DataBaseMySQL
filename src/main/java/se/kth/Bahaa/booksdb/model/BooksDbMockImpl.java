@@ -23,7 +23,7 @@ public class BooksDbMockImpl implements BooksDbInterface {
     private final List<Book> books;
 
     public BooksDbMockImpl() {
-        books = Arrays.asList(DATA);
+        this.books = new ArrayList<>(Arrays.asList(DATA));
     }
 
     @Override
@@ -39,13 +39,9 @@ public class BooksDbMockImpl implements BooksDbInterface {
 
     @Override
     public void addBook(Book book) throws BooksDbException {
-
+        books.add(book);
     }
 
-    @Override
-    public void addAuthor(Author author) throws BooksDbException {
-
-    }
 
     @Override
     public void updateBook(Book book) throws BooksDbException {
@@ -81,18 +77,50 @@ public class BooksDbMockImpl implements BooksDbInterface {
 
     @Override
     public List<Book> searchBooksByAuthor(String authorName) throws BooksDbException {
-        return null;
+            List<Book> result = new ArrayList<>();
+            authorName = authorName.toLowerCase();
+            for (Book book : books) {
+                if (book.getAuthorNames().toLowerCase().contains(authorName)) {
+                    result.add(book);
+                }
+            }
+            return result;
     }
 
     @Override
-    public Book searchBookByISBN(String isbn) throws BooksDbException {
-        return null;
+    public  List<Book> searchBookByISBN(String isbn) throws BooksDbException {
+        List<Book> result = new ArrayList<>();
+        for (Book book : books) {
+            if (book.getIsbn().equals(isbn)) {
+                result.add(book);
+                return result;
+            }
+        }
+        return result;
     }
 
     @Override
     public List<Book> searchBooksByGenre(String genre) throws BooksDbException {
-        return null;
+        List<Book> result = new ArrayList<>();
+        for (Book book : books) {
+            if (book.getGenre() != null && book.getGenre().equalsIgnoreCase(genre)) {
+                result.add(book);
+            }
+        }
+        return result;
     }
+
+    @Override
+    public List<Book> searchBooksByRating(int rating) throws BooksDbException {
+        List<Book> result = new ArrayList<>();
+        for (Book book : books) {
+            if (book.getRating() == rating) {
+                result.add(book);
+            }
+        }
+        return result;
+    }
+
 
     private static final Book[] DATA = {
             new Book(1, "123456789", "Databases Illuminated", new Date(2018, 1, 1)),

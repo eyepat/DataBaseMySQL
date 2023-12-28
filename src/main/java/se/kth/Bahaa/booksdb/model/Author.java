@@ -5,7 +5,7 @@ public class Author {
     private String name;
 
 
-    public Author(int authorId, String name) {
+    public Author(String name) {
         this.authorId = authorId;
         this.name = name;
     }

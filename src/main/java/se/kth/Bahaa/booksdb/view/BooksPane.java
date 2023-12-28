@@ -169,6 +169,7 @@ public class BooksPane extends VBox {
 
 
     private void showAddBookDialog() {
+        authorList.clear();
         // Create the custom dialog.
         Dialog<Book> dialog = new Dialog<>();
         dialog.setTitle("Add New Book");

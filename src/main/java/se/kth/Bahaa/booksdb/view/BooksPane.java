@@ -11,13 +11,12 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
-import se.kth.Bahaa.booksdb.model.Author;
-import se.kth.Bahaa.booksdb.model.Book;
-import se.kth.Bahaa.booksdb.model.BooksDbMockImpl;
-import se.kth.Bahaa.booksdb.model.SearchMode;
+import javafx.stage.Popup;
+import se.kth.Bahaa.booksdb.model.*;
 
 
 /**
@@ -121,22 +120,51 @@ public class BooksPane extends VBox {
     private void initSearchView(Controller controller) {
         searchField = new TextField();
         searchField.setPromptText("Search for...");
+
+        ComboBox<Genre> genreSearchComboBox = new ComboBox<>();
+        genreSearchComboBox.getItems().addAll(Genre.values());
+
+        Popup genrePopup = new Popup();
+        genrePopup.getContent().add(genreSearchComboBox);
+
         searchModeBox = new ComboBox<>();
         searchModeBox.getItems().addAll(SearchMode.values());
         searchModeBox.setValue(SearchMode.Title);
+
         searchButton = new Button("Search");
 
+        //search mode changes
+        searchModeBox.setOnAction(e -> {
+            if (searchModeBox.getValue() == SearchMode.GENRE) {
+                searchField.setVisible(false);
 
-        // event handling (dispatch to controller)
-        searchButton.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                String searchFor = searchField.getText();
-                SearchMode mode = searchModeBox.getValue();
-                controller.onSearchSelected(searchFor, mode);
+                genrePopup.show(searchModeBox,
+                        searchModeBox.getScene().getWindow().getX() + searchModeBox.localToScene(searchModeBox.getBoundsInLocal()).getMinX() + 110,
+                        searchModeBox.getScene().getWindow().getY() + searchModeBox.localToScene(searchModeBox.getBoundsInLocal()).getMaxY() + 4);
+            } else {
+                searchField.setVisible(true);
+                genrePopup.hide();
             }
         });
+
+        // search button action
+        searchButton.setOnAction(e -> {
+            if (searchModeBox.getValue() == SearchMode.GENRE) {
+                Genre selectedGenre = genreSearchComboBox.getValue();
+                controller.onSearchSelected(selectedGenre.toString(), searchModeBox.getValue());
+
+            }
+        });
+
+        HBox searchBox = new HBox(10);
+        searchBox.setAlignment(Pos.CENTER_LEFT);
+        searchBox.getChildren().addAll(searchModeBox, searchField, searchButton);
+
+        this.getChildren().add(0, searchBox); // Add at the top of the VBox
     }
+
+
+
 
     private void initMenus() {
 
@@ -189,8 +217,10 @@ public class BooksPane extends VBox {
         TextField isbnField = new TextField();
         isbnField.setPromptText("ISBN");
         DatePicker publishedPicker = new DatePicker();
-        TextField genreField = new TextField();
-        genreField.setPromptText("Genre");
+
+        ComboBox<Genre> genreComboBox = new ComboBox<>();
+        genreComboBox.getItems().addAll(Genre.values());
+        genreComboBox.setValue(Genre.FANTASY); // Default value
 
         ComboBox<Integer> ratingComboBox = new ComboBox<>();
         ratingComboBox.getItems().addAll(1, 2, 3, 4, 5);
@@ -214,7 +244,7 @@ public class BooksPane extends VBox {
         gridPane.add(new Label("Published Date:"), 0, 2);
         gridPane.add(publishedPicker, 1, 2);
         gridPane.add(new Label("Genre:"), 0, 3);
-        gridPane.add(genreField, 1, 3);
+        gridPane.add(genreComboBox, 1, 3); // Replaced genreField with genreComboBox
         gridPane.add(authorNameField, 1, 5);
         gridPane.add(addAuthorButton, 2, 5);
         gridPane.add(new Label("Rating:"), 0, 6);
@@ -231,11 +261,10 @@ public class BooksPane extends VBox {
                 Date published = Date.valueOf(publishedDate);
 
                 Book newBook = new Book(isbn, title, published);
-
                 authorList.forEach(newBook::addAuthor);
 
-                String genre = genreField.getText();
-                newBook.setGenre(genre);
+                Genre selectedGenre = genreComboBox.getValue();
+                newBook.setGenre(selectedGenre);
 
                 int rating = ratingComboBox.getValue();
                 newBook.setRating(rating);
@@ -254,3 +283,4 @@ public class BooksPane extends VBox {
     }
 
 }
+

@@ -39,7 +39,7 @@ public interface BooksDbInterface {
 
         List<Book> searchBooksByAuthor(String authorName) throws BooksDbException;
         List<Book> searchBookByISBN(String isbn) throws BooksDbException;
-        List<Book> searchBooksByGenre(String genre) throws BooksDbException;
+        List<Book> searchBooksByGenre(Genre genre) throws BooksDbException;
     List<Book> searchBooksByRating(int raiting) throws BooksDbException;
 
 

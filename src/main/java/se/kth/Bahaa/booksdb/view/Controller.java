@@ -2,10 +2,7 @@ package se.kth.Bahaa.booksdb.view;
 
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
-import se.kth.Bahaa.booksdb.model.Book;
-import se.kth.Bahaa.booksdb.model.BooksDbException;
-import se.kth.Bahaa.booksdb.model.BooksDbInterface;
-import se.kth.Bahaa.booksdb.model.SearchMode;
+import se.kth.Bahaa.booksdb.model.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,16 +53,12 @@ public class Controller {
                         result = booksDb.searchBooksByAuthor(searchFor);
                         break;
                     case GENRE:
-                        result = booksDb.searchBooksByGenre(searchFor);
+                        Genre genre = Genre.valueOf(searchFor.toUpperCase());
+                        result = booksDb.searchBooksByGenre(genre);
                         break;
                     case RATING:
                         int rating = Integer.parseInt(searchFor);
-                        if (rating >= 1 && rating <= 5) {
                             result = booksDb.searchBooksByRating(rating);
-                        } else {
-                            booksView.showAlertAndWait("Rating must be between 1 and 5.", Alert.AlertType.WARNING);
-                            return;
-                        }
                         break;
                     // ... other cases ...
                 }

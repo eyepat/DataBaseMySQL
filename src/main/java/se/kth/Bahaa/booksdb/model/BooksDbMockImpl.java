@@ -50,7 +50,7 @@ public class BooksDbMockImpl implements BooksDbInterface {
 
     @Override
     public void deleteBook(int bookId) throws BooksDbException {
-
+        books.remove(bookId);
     }
 
     @Override
@@ -100,10 +100,10 @@ public class BooksDbMockImpl implements BooksDbInterface {
     }
 
     @Override
-    public List<Book> searchBooksByGenre(String genre) throws BooksDbException {
+    public List<Book> searchBooksByGenre(Genre genre) throws BooksDbException {
         List<Book> result = new ArrayList<>();
         for (Book book : books) {
-            if (book.getGenre() != null && book.getGenre().equalsIgnoreCase(genre)) {
+            if (book.getGenre() == genre) {
                 result.add(book);
             }
         }

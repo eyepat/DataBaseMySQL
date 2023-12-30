@@ -19,7 +19,7 @@ public class Book {
     private Date published;
     private String storyLine = "";
     private List<Author> authors; // Lägg till en lista av författare
-    private String genre; // Added field for genre
+    private Genre genre; // Added field for genre
     private int rating; // Added field for rating
     // TODO: 
     // Add authors, as a separate class(!), and corresponding methods, to your implementation
@@ -43,13 +43,13 @@ public class Book {
     public String getTitle() { return title; }
     public Date getPublished() { return published; }
     public String getStoryLine() { return storyLine; }
-    public List<Author> getAuthors() { return authors; } // Getter för författare
+    public List<Author> getAuthors() { return authors; }
     public void setStoryLine(String storyLine) {
         this.storyLine = storyLine;
     }
     // Metoder för att hantera författarlista
-    public String getGenre() { return genre; } // Getter for genre
-    public void setGenre(String genre) { this.genre = genre; } // Setter for genre
+    public Genre getGenre() { return genre; }
+    public void setGenre(Genre genre) { this.genre = genre; }
 
     public int getRating() { return rating; } // Getter for rating
     public void setRating(int rating)

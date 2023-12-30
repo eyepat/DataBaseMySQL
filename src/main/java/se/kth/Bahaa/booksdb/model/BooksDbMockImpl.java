@@ -50,7 +50,7 @@ public class BooksDbMockImpl implements BooksDbInterface {
 
     @Override
     public void deleteBook(int bookId) throws BooksDbException {
-        books.remove(bookId);
+
     }
 
     @Override

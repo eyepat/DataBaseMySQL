@@ -152,8 +152,11 @@ public class BooksPane extends VBox {
             if (searchModeBox.getValue() == SearchMode.GENRE) {
                 Genre selectedGenre = genreSearchComboBox.getValue();
                 controller.onSearchSelected(selectedGenre.toString(), searchModeBox.getValue());
+            }else {
+                    String searchText = searchField.getText();
+                    controller.onSearchSelected(searchText, searchModeBox.getValue());
+                }
 
-            }
         });
 
         HBox searchBox = new HBox(10);

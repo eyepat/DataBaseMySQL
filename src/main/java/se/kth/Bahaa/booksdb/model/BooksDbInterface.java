@@ -31,9 +31,9 @@ public interface BooksDbInterface {
     //me
     void addBook(Book book) throws BooksDbException;
 
-    void updateBook(Book book) throws BooksDbException;
-    void deleteBook(int bookId) throws BooksDbException;
-    void deleteAuthor(int authorId) throws BooksDbException;
+    void updateBook(Book updatedBook) throws BooksDbException;
+    void deleteBook(Book book) throws BooksDbException;
+
 
     List<Book> searchBooksByTitle(String title) throws BooksDbException;
 

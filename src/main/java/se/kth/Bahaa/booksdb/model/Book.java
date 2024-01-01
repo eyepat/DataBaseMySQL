@@ -12,12 +12,12 @@ import java.util.stream.Collectors;
  * @author anderslm@kth.se
  */
 public class Book {
-    
+
     private int bookId;
     private String isbn; // should check format
     private String title;
     private Date published;
-    private String storyLine = "";
+
     private List<Author> authors; // Lägg till en lista av författare
     private Genre genre; // Added field for genre
     private int rating; // Added field for rating
@@ -37,16 +37,28 @@ public class Book {
         this(-1, isbn, title, published);
         this.authors = new ArrayList<>();
     }
-    
-    public int getBookId() { return bookId; }
+
+
+
+    public void setIsbn(String isbn) {
+        this.isbn = isbn;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setAuthors(List<Author> authors) {
+        this.authors = authors;
+    }
+
+    public String getBookIsbn() { return isbn; }
     public String getIsbn() { return isbn; }
     public String getTitle() { return title; }
     public Date getPublished() { return published; }
-    public String getStoryLine() { return storyLine; }
+
     public List<Author> getAuthors() { return authors; }
-    public void setStoryLine(String storyLine) {
-        this.storyLine = storyLine;
-    }
+
     // Metoder för att hantera författarlista
     public Genre getGenre() { return genre; }
     public void setGenre(Genre genre) { this.genre = genre; }

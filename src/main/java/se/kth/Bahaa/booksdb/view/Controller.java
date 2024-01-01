@@ -37,6 +37,22 @@ public class Controller {
             booksView.showAlertAndWait("Error adding book to the database.",ERROR);
         }
     }
+
+    public static void removeBook(Book book) {
+       try{
+           booksDb.deleteBook(book);
+       } catch (BooksDbException e) {
+           booksView.showAlertAndWait("Error removing book: " + e.getMessage(), Alert.AlertType.ERROR);
+       }
+    }
+    public static void updateBook(Book book) {
+        try {
+            booksDb.updateBook(book);
+            // Update view or show confirmation
+        } catch (BooksDbException e) {
+            booksView.showAlertAndWait("Error updating book: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
     protected void onSearchSelected(String searchFor, SearchMode mode) {
         try {
             // Check for a non-empty search string, except for rating where a single digit is valid
@@ -78,6 +94,9 @@ public class Controller {
             booksView.showAlertAndWait("Unexpected error: " + e.getMessage(), Alert.AlertType.ERROR);
         }
     }
+
+
+
 
 
         // TODO:

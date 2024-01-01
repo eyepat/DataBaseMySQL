@@ -44,19 +44,25 @@ public class BooksDbMockImpl implements BooksDbInterface {
 
 
     @Override
-    public void updateBook(Book book) throws BooksDbException {
-
+    public void updateBook(Book updatedBook) throws BooksDbException {
+        for (int i = 0; i < books.size(); i++) {
+            Book existingBook = books.get(i);
+            // Assuming you're using bookId or isbn as the unique identifier
+            if (existingBook.getBookIsbn() == updatedBook.getBookIsbn()) {
+                books.set(i, updatedBook);
+                return;
+            }
+        }
+        // Optionally, handle the case where the book is not found
+        throw new BooksDbException("Book not found for update");
     }
 
     @Override
-    public void deleteBook(int bookId) throws BooksDbException {
-
+    public void deleteBook(Book book) throws BooksDbException {
+        books.remove(book);
     }
 
-    @Override
-    public void deleteAuthor(int authorId) throws BooksDbException {
 
-    }
 
 
     @Override

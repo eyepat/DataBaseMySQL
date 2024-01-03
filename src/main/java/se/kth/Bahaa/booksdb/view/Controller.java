@@ -4,62 +4,83 @@ import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import se.kth.Bahaa.booksdb.model.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import static javafx.scene.control.Alert.AlertType.*;
+import static javafx.scene.control.Alert.AlertType.INFORMATION;
+import static javafx.scene.control.Alert.AlertType.WARNING;
 
-/**
- * The controller is responsible for handling user requests and update the view
- * (and in some cases the model).
- *
- * @author anderslm@kth.se
- */
 public class Controller {
-
-    private static BooksPane booksView = null; // view
-    private static BooksDbInterface booksDb = null; // model
+    private  final BooksPane booksView;
+    private final BooksDbInterface booksDb;
 
     public Controller(BooksDbInterface booksDb, BooksPane booksView) {
         this.booksDb = booksDb;
         this.booksView = booksView;
     }
 
+    public void connectToDatabase(String url, String user, String pass, String databaseName) {
+        try {
+            boolean isConnected = booksDb.connect(url, user, pass, databaseName);
+            if (isConnected) {
+                booksView.showAlertAndWait("Connected to database successfully.", INFORMATION);
+                refreshBooksTable();
+            } else {
+                booksView.showAlertAndWait("Failed to connect to the database.", Alert.AlertType.ERROR);
+            }
+        } catch (BooksDbException e) {
+            booksView.showAlertAndWait("Database error: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
+
     public static void exitProgram() {
         System.out.println("Exiting the Program!");
         Platform.exit(); // for exiting the game.
     }
-    public static void addNewBook(Book book) {
+    public void addNewBook(Book book) {
         try {
             booksDb.addBook(book);
-            // Update view or show confirmation
+            refreshBooksTable();
         } catch (BooksDbException e) {
-            booksView.showAlertAndWait("Error adding book to the database.",ERROR);
+            booksView.showAlertAndWait("Error adding book: " + e.getMessage(), Alert.AlertType.ERROR);
         }
     }
 
-    public static void removeBook(Book book) {
-       try{
-           booksDb.deleteBook(book);
-       } catch (BooksDbException e) {
-           booksView.showAlertAndWait("Error removing book: " + e.getMessage(), Alert.AlertType.ERROR);
-       }
-    }
-    public static void updateBook(Book book) {
+
+
+    public void removeBook(Book book) {
         try {
-            booksDb.updateBook(book);
-            // Update view or show confirmation
+            booksDb.deleteBook(book);
+            refreshBooksTable();
+        } catch (BooksDbException e) {
+            booksView.showAlertAndWait("Error removing book: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+    public void updateBook(Book updatedBook) {
+        try {
+            booksDb.updateBook(updatedBook);
+            refreshBooksTable();
         } catch (BooksDbException e) {
             booksView.showAlertAndWait("Error updating book: " + e.getMessage(), Alert.AlertType.ERROR);
         }
     }
-    protected void onSearchSelected(String searchFor, SearchMode mode) {
+
+    private void refreshBooksTable() {
+        try {
+            List<Book> books = booksDb.getAllBooks();
+            booksView.displayBooks(books);
+        } catch (BooksDbException e) {
+            booksView.showAlertAndWait("Error fetching books: " + e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+    public void onSearchSelected(String searchFor, SearchMode mode) {
         try {
             // Check for a non-empty search string, except for rating where a single digit is valid
             if (searchFor != null && (mode != SearchMode.RATING || !searchFor.trim().isEmpty())) {
                 List<Book> result = null;
                 switch (mode) {
                     case Title:
+
                         result = booksDb.searchBooksByTitle(searchFor);
                         break;
                     case ISBN:

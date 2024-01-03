@@ -24,8 +24,8 @@ public interface BooksDbInterface {
      * @param database
      * @return true on successful connection.
      */
-    public boolean connect(String database) throws BooksDbException;
-    
+    boolean connect(String databaseUrl, String username, String password, String databaseName) throws BooksDbException;
+    List<Book> getAllBooks() throws BooksDbException;
     public void disconnect() throws BooksDbException;
 
     //me

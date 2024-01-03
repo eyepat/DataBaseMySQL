@@ -1,30 +1,20 @@
 package se.kth.Bahaa.booksdb.model;
 
-
 import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Representation of a book.
- * 
- * @author anderslm@kth.se
- */
 public class Book {
 
     private int bookId;
-    private String isbn; // should check format
+    private String isbn;
     private String title;
     private Date published;
+    private List<Author> authors;
+    private Genre genre;
+    private int rating;
 
-    private List<Author> authors; // Lägg till en lista av författare
-    private Genre genre; // Added field for genre
-    private int rating; // Added field for rating
-    // TODO: 
-    // Add authors, as a separate class(!), and corresponding methods, to your implementation
-    // as well, i.e. "private ArrayList<Author> authors;"
-    
     public Book(int bookId, String isbn, String title, Date published) {
         this.bookId = bookId;
         this.isbn = isbn;
@@ -32,61 +22,45 @@ public class Book {
         this.published = published;
         this.authors = new ArrayList<>();
     }
-    
+
     public Book(String isbn, String title, Date published) {
         this(-1, isbn, title, published);
-        this.authors = new ArrayList<>();
     }
 
-
-
-    public void setIsbn(String isbn) {
-        this.isbn = isbn;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public void setAuthors(List<Author> authors) {
-        this.authors = authors;
-    }
-
-    public String getBookIsbn() { return isbn; }
+    // Getters and setters
+    public int getBookId() { return bookId; }
     public String getIsbn() { return isbn; }
     public String getTitle() { return title; }
     public Date getPublished() { return published; }
-
     public List<Author> getAuthors() { return authors; }
-
-    // Metoder för att hantera författarlista
     public Genre getGenre() { return genre; }
-    public void setGenre(Genre genre) { this.genre = genre; }
+    public int getRating() { return rating; }
 
-    public int getRating() { return rating; } // Getter for rating
-    public void setRating(int rating)
-    { this.rating = rating; }
+    public void setIsbn(String isbn) { this.isbn = isbn; }
+    public void setTitle(String title) { this.title = title; }
+    public void setPublished(Date published) { this.published = published; }
+    public void setAuthors(List<Author> authors) { this.authors = authors; }
+    public void setGenre(Genre genre) { this.genre = genre; }
+    public void setRating(int rating) { this.rating = rating; }
 
     public void addAuthor(Author author) {
         if (!authors.contains(author)) {
             authors.add(author);
         }
     }
+
     public void removeAuthor(Author author) {
         authors.remove(author);
     }
 
     public String getAuthorNames() {
-        return authors.stream()
-                .map(Author::getName)
-                .collect(Collectors.joining(", "));
+        return authors.stream().map(Author::getName).collect(Collectors.joining(", "));
     }
 
     @Override
     public String toString() {
-        String authorNames = authors.stream()
-                .map(Author::getName)
-                .reduce("", (a, b) -> a + ", " + b);
-        return title + ", " + isbn + ", " + published.toString() + ", Authors: " + authorNames;
+        String authorNames = getAuthorNames();
+        return String.format("%s, %s, Published: %s, Authors: %s, Genre: %s, Rating: %d",
+                title, isbn, published.toString(), authorNames, genre, rating);
     }
 }

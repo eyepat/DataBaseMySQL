@@ -19,14 +19,10 @@ import java.util.List;
  */
 public interface BooksDbInterface {
     
-    /**
-     * Connect to the database.
-     * @param database
-     * @return true on successful connection.
-     */
+
     boolean connect(String databaseUrl, String username, String password, String databaseName) throws BooksDbException;
     List<Book> getAllBooks() throws BooksDbException;
-    public void disconnect() throws BooksDbException;
+     void disconnect() throws BooksDbException;
 
     //me
     void addBook(Book book) throws BooksDbException;
@@ -35,12 +31,12 @@ public interface BooksDbInterface {
     void deleteBook(Book book) throws BooksDbException;
 
 
-    List<Book> searchBooksByTitle(String title) throws BooksDbException;
+        List<Book> searchBooksByTitle(String title) throws BooksDbException;
 
         List<Book> searchBooksByAuthor(String authorName) throws BooksDbException;
         List<Book> searchBookByISBN(String isbn) throws BooksDbException;
         List<Book> searchBooksByGenre(Genre genre) throws BooksDbException;
-    List<Book> searchBooksByRating(int raiting) throws BooksDbException;
+        List<Book> searchBooksByRating(int raiting) throws BooksDbException;
 
 
 

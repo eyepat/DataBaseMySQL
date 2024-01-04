@@ -26,7 +26,20 @@ public class Book {
     public Book(String isbn, String title, Date published) {
         this(-1, isbn, title, published);
     }
+    public String getAuthorNames() {
+        return authors.stream()
+                .map(Author::getName)
+                .collect(Collectors.joining(", "));
+    }
 
+    public String getAuthorPersonNumbers() {
+        return authors.stream()
+                .map(Author::getPersonNumber)
+                .collect(Collectors.joining(", "));
+    }
+    public void setBookId(int bookId) {
+        this.bookId = bookId;
+    }
     // Getters and setters
     public int getBookId() { return bookId; }
     public String getIsbn() { return isbn; }
@@ -53,9 +66,7 @@ public class Book {
         authors.remove(author);
     }
 
-    public String getAuthorNames() {
-        return authors.stream().map(Author::getName).collect(Collectors.joining(", "));
-    }
+
 
     @Override
     public String toString() {

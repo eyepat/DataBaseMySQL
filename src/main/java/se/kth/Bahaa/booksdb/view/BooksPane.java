@@ -33,11 +33,14 @@
         private Button searchButton;
         private MenuBar menuBar;
         private Controller controller;
+        private BooksDpImpl booksDbImpl;
 
-        public BooksPane(BooksDbMockImpl booksDb) {
+        public BooksPane(BooksDpImpl booksDb,BooksDpImpl booksDbImpl) {
             this.controller = new Controller(booksDb, this);
             this.booksDb = booksDb; // Initialize the booksDb field
+            this.booksDbImpl = booksDbImpl;
             this.init();
+
         }
         public void disconnectFromDatabase() {
             try {
@@ -96,18 +99,24 @@
             TableColumn<Book, String> titleCol = new TableColumn<>("Title");
             TableColumn<Book, String> isbnCol = new TableColumn<>("ISBN");
             TableColumn<Book, Date> publishedCol = new TableColumn<>("Published");
-            TableColumn<Book, String> authorCol = new TableColumn<>("Authors");
+
+            TableColumn<Book, String> authorNamesCol = new TableColumn<>("Authors");
+            authorNamesCol.setCellValueFactory(new PropertyValueFactory<>("authorNames"));
+
+            TableColumn<Book, String> authorPersonNumbersCol = new TableColumn<>("Author Person Numbers");
+            authorPersonNumbersCol.setCellValueFactory(new PropertyValueFactory<>("authorPersonNumbers"));
+
+
             TableColumn<Book, String> genreCol = new TableColumn<>("Genre");
             TableColumn<Book, Integer> ratingCol = new TableColumn<>("Rating");
-
             titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
             isbnCol.setCellValueFactory(new PropertyValueFactory<>("isbn"));
             publishedCol.setCellValueFactory(new PropertyValueFactory<>("published"));
-            authorCol.setCellValueFactory(new PropertyValueFactory<>("authorNames"));
             genreCol.setCellValueFactory(new PropertyValueFactory<>("genre"));
             ratingCol.setCellValueFactory(new PropertyValueFactory<>("rating"));
 
-            booksTable.getColumns().addAll(titleCol, isbnCol, publishedCol, authorCol, genreCol, ratingCol);
+            booksTable.getColumns().addAll(titleCol, isbnCol, publishedCol, authorNamesCol, authorPersonNumbersCol, genreCol, ratingCol);
+
             titleCol.prefWidthProperty().bind(booksTable.widthProperty().multiply(0.5));
             booksTable.setItems(booksInTable);
         }
@@ -230,7 +239,7 @@
                 exitItem.setOnAction(e -> Controller.exitProgram());
 
                 MenuItem connectItem = new MenuItem("Connect to Db");
-                connectItem.setOnAction(e -> controller.connectToDatabase("jdbc:mysql://localhost:3306/", "root", "abcd1970","library"));
+                connectItem.setOnAction(e -> controller.connectToDatabase("jdbc:mysql://localhost:3306/", "clientUser", "password","library"));
 
                 MenuItem disconnectItem = new MenuItem("Disconnect");
                 disconnectItem.setOnAction(e ->disconnectFromDatabase());
@@ -293,7 +302,7 @@
             String authorName = authorNameField.getText();
             String personNumber = personNumberField.getText();
             if (!authorName.isEmpty() && !personNumber.isEmpty()) {
-                Author newAuthor = new Author(-1, authorName, null); // -1 as a placeholder for authorId
+                Author newAuthor = new Author(-1, authorName, personNumber); // -1 as a placeholder for authorId
                 authorList.add(newAuthor);
                 authorNameField.clear();
             }
@@ -350,7 +359,7 @@
     }
 
         //Manage the update book stuff :)
-        private Dialog<Book>ShowUpdateBookDialog(Book book) {
+        private Dialog<Book> ShowUpdateBookDialog(Book book) {
             Dialog<Book> dialog = new Dialog<>();
             dialog.setTitle("Update Book");
 
@@ -366,25 +375,72 @@
 
             TextField isbnField = new TextField(book.getIsbn());
             TextField titleField = new TextField(book.getTitle());
-            TextField authorField = new TextField(book.getAuthorNames()); // Assuming a method to get author names
+
+            ListView<Author> authorsListView = new ListView<>();
+            authorsListView.setItems(FXCollections.observableArrayList(book.getAuthors()));
+
+// Create a custom cell factory for the authorsListView
+            authorsListView.setCellFactory(param -> new ListCell<Author>() {
+                @Override
+                protected void updateItem(Author author, boolean empty) {
+                    super.updateItem(author, empty);
+
+                    if (empty || author == null) {
+                        setText(null);
+                    } else {
+                        setText(author.getName());
+                    }
+                }
+            });
+
+
+            Button addAuthorButton = new Button("Add Author");
+            Button editAuthorButton = new Button("Edit Selected Author");
+            Button removeAuthorButton = new Button("Remove Selected Author");
+
+            // Add Author button logic
+            addAuthorButton.setOnAction(e -> {
+                showAuthorDialog(null, authorsListView.getItems(), true); // true for adding a new author
+            });
+
+            // Edit Author button logic
+            editAuthorButton.setOnAction(e -> {
+                Author selectedAuthor = authorsListView.getSelectionModel().getSelectedItem();
+                if (selectedAuthor != null) {
+                    showAuthorDialog(selectedAuthor, authorsListView.getItems(), false); // false for editing an existing author
+                }
+            });
+
+            // Remove Author button logic
+            removeAuthorButton.setOnAction(e -> {
+                Author selectedAuthor = authorsListView.getSelectionModel().getSelectedItem();
+                if (selectedAuthor != null) {
+                    authorsListView.getItems().remove(selectedAuthor);
+                }
+            });
+
             ComboBox<Genre> genreComboBox = new ComboBox<>();
             genreComboBox.getItems().addAll(Genre.values());
-            genreComboBox.setValue(book.getGenre()); // Assuming book has a getGenre() method
+            genreComboBox.setValue(book.getGenre());
+
             ComboBox<Integer> ratingComboBox = new ComboBox<>();
             ratingComboBox.getItems().addAll(1, 2, 3, 4, 5);
-            ratingComboBox.setValue(book.getRating()); // Assuming book has a getRating() method
+            ratingComboBox.setValue(book.getRating());
 
             // Add components to the grid
             grid.add(new Label("ISBN:"), 0, 0);
             grid.add(isbnField, 1, 0);
             grid.add(new Label("Title:"), 0, 1);
             grid.add(titleField, 1, 1);
-            grid.add(new Label("Author:"), 0, 2);
-            grid.add(authorField, 1, 2);
-            grid.add(new Label("Genre:"), 0, 3);
-            grid.add(genreComboBox, 1, 3);
-            grid.add(new Label("Rating:"), 0, 4);
-            grid.add(ratingComboBox, 1, 4);
+            grid.add(new Label("Authors:"), 0, 2);
+            grid.add(authorsListView, 1, 2);
+            grid.add(addAuthorButton, 2, 2);
+            grid.add(editAuthorButton, 2, 3);
+            grid.add(removeAuthorButton, 2, 4);
+            grid.add(new Label("Genre:"), 0, 5);
+            grid.add(genreComboBox, 1, 5);
+            grid.add(new Label("Rating:"), 0, 6);
+            grid.add(ratingComboBox, 1, 6);
 
             dialog.getDialogPane().setContent(grid);
 
@@ -393,7 +449,7 @@
                 if (dialogButton == updateButtonType) {
                     book.setIsbn(isbnField.getText());
                     book.setTitle(titleField.getText());
-                    updateAuthorsToString(book, authorField.getText());
+                    book.setAuthors(new ArrayList<>(authorsListView.getItems()));
                     book.setGenre(genreComboBox.getValue());
                     book.setRating(ratingComboBox.getValue());
                     return book;
@@ -403,5 +459,63 @@
 
             return dialog;
         }
+
+        private void showAuthorDialog(Author author, ObservableList<Author> authorsList, boolean isNew) {
+            Dialog<Author> authorDialog = new Dialog<>();
+            authorDialog.setTitle(isNew ? "Add New Author" : "Edit Author");
+
+            // Set the button types
+            ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+            authorDialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(10);
+            grid.setPadding(new Insets(20, 150, 10, 10));
+
+            TextField nameField = new TextField();
+            TextField personNumberField = new TextField();
+            if (!isNew && author != null) {
+                nameField.setText(author.getName());
+                personNumberField.setText(author.getPersonNumber());
+            }
+
+            grid.add(new Label("Name:"), 0, 0);
+            grid.add(nameField, 1, 0);
+            grid.add(new Label("Person Number:"), 0, 1);
+            grid.add(personNumberField, 1, 1);
+
+            authorDialog.getDialogPane().setContent(grid);
+
+            // Convert the result to an Author when the save button is clicked
+            authorDialog.setResultConverter(dialogButton -> {
+                if (dialogButton == saveButtonType) {
+                    if (isNew) {
+                        Author newAuthor = new Author(-1, nameField.getText(), personNumberField.getText());
+                        try {
+                            int generatedAuthorId = booksDbImpl.insertNewAuthorIntoDatabase(newAuthor);
+                            newAuthor.setAuthorId(generatedAuthorId);
+                            authorsList.add(newAuthor);
+                        } catch (BooksDbException e) {
+                            // Handle the exception (e.g., show an error dialog)
+                        }
+                    } else if (author != null) {
+                        author.setName(nameField.getText());
+                        author.setPersonNumber(personNumberField.getText());
+                        try {
+                            booksDbImpl.updateAuthorInDatabase(author);
+                        } catch (BooksDbException e) {
+                            // Handle the exception
+                        }
+                    }
+                    return author;
+                }
+                return null;
+            });
+
+            authorDialog.showAndWait();
+        }
+
+
     }
 

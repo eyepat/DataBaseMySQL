@@ -4,7 +4,7 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import se.kth.Bahaa.booksdb.model.BooksDbMockImpl;
+import se.kth.Bahaa.booksdb.model.BooksDpImpl;
 import se.kth.Bahaa.booksdb.view.BooksPane;
 
 /**
@@ -17,10 +17,10 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) {
 
-        BooksDbMockImpl booksDb = new BooksDbMockImpl(); // model
+        BooksDpImpl booksDb = new BooksDpImpl(); // model
         // Don't forget to connect to the db, somewhere...
 
-        BooksPane root = new BooksPane(booksDb);
+        BooksPane root = new BooksPane(booksDb,booksDb);
 
         Scene scene = new Scene(root, 800, 600);
 

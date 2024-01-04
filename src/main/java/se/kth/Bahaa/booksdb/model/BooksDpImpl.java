@@ -4,11 +4,11 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BooksDbMockImpl implements BooksDbInterface {
+public class BooksDpImpl implements BooksDbInterface {
     private Connection connection;
     private final List<Book> books;
 
-    public BooksDbMockImpl() {
+    public BooksDpImpl() {
         this.books = new ArrayList<>();
     }
 
@@ -74,7 +74,7 @@ public class BooksDbMockImpl implements BooksDbInterface {
 
     private List<Author> getAuthorsForBook(int bookId) throws SQLException {
         List<Author> authors = new ArrayList<>();
-        String query = "SELECT a.AuthorId, a.Name FROM Author a JOIN BookAuthor ba ON a.AuthorId = ba.AuthorId WHERE ba.BookId = ?";
+        String query = "SELECT a.AuthorId, a.Name, a.PersonNumber FROM Author a JOIN BookAuthor ba ON a.AuthorId = ba.AuthorId WHERE ba.BookId = ?";
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setInt(1, bookId);
@@ -82,11 +82,13 @@ public class BooksDbMockImpl implements BooksDbInterface {
             while (resultSet.next()) {
                 int authorId = resultSet.getInt("AuthorId");
                 String name = resultSet.getString("Name");
-                authors.add(new Author(authorId, name, null)); // Assuming there's no personNumber needed here
+                String personNumber = resultSet.getString("PersonNumber");
+                authors.add(new Author(authorId, name, personNumber));
             }
         }
         return authors;
     }
+
 
 
     private void populateBooksFromDatabase() {
@@ -119,59 +121,68 @@ public class BooksDbMockImpl implements BooksDbInterface {
         }
     }
 
-    // ... Rest of the class ...
-
-
+    private int findAvailableBookId() throws SQLException {
+        int bookId = 1;
+        String query = "SELECT BookId FROM Book WHERE BookId = ?";
+        while (true) {
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+                statement.setInt(1, bookId);
+                ResultSet resultSet = statement.executeQuery();
+                if (!resultSet.next()) {
+                    return bookId; // Returnerar det första lediga bookId
+                }
+                bookId++;
+            }
+        }
+    }
 
     @Override
     public void addBook(Book book) throws BooksDbException {
-        // SQL statements
-        String insertBookSql = "INSERT INTO Book (isbn, title, publication_year, Genre, Rating) VALUES (?, ?, ?, ?, ?)";
-        String insertAuthorSql = "INSERT INTO Author (Name) VALUES (?)"; // Assuming Name is enough for a new author
+        String insertBookSql = "INSERT INTO Book (BookId, isbn, title, publication_year, Genre, Rating) VALUES (?, ?, ?, ?, ?, ?)";
+        String insertAuthorSql = "INSERT INTO Author (Name, personNumber) VALUES (?, ?)";
         String insertBookAuthorSql = "INSERT INTO BookAuthor (BookId, AuthorId) VALUES (?, ?)";
 
         try {
             connection.setAutoCommit(false);
 
-            // Insert book details and get generated BookId
-            int bookId;
-            try (PreparedStatement bookStmt = connection.prepareStatement(insertBookSql, Statement.RETURN_GENERATED_KEYS)) {
-                bookStmt.setString(1, book.getIsbn());
-                bookStmt.setString(2, book.getTitle());
-                bookStmt.setDate(3, book.getPublished());
-                bookStmt.setString(4, book.getGenre().toString());
-                bookStmt.setInt(5, book.getRating());
-                bookStmt.executeUpdate();
+            // Hitta ett ledigt bookId
+            int bookId = findAvailableBookId();
 
-                ResultSet rs = bookStmt.getGeneratedKeys();
-                if (rs.next()) {
-                    bookId = rs.getInt(1);
-                } else {
-                    throw new BooksDbException("Failed to insert book, no ID obtained.");
-                }
+            try (PreparedStatement bookStmt = connection.prepareStatement(insertBookSql)) {
+                bookStmt.setInt(1, bookId);
+                bookStmt.setString(2, book.getIsbn());
+                bookStmt.setString(3, book.getTitle());
+                bookStmt.setDate(4, book.getPublished());
+                bookStmt.setString(5, book.getGenre().toString());
+                bookStmt.setInt(6, book.getRating());
+                bookStmt.executeUpdate();
             }
 
             // Insert authors and get their Ids, then link them to the book
             for (Author author : book.getAuthors()) {
                 int authorId;
 
-                // Check if author exists, if not, insert and get the generated AuthorId
-                // This requires additional logic to check for existing authors which is not shown here
+                // Kontrollera om författaren redan finns baserat på personnummer
+                Author existingAuthor = findAuthorByPersonNumber(author.getPersonNumber());
+                if (existingAuthor != null) {
+                    authorId = existingAuthor.getAuthorId(); // Använd befintlig författares ID
+                } else {
+                    // Lägg till ny författare
+                    try (PreparedStatement authorStmt = connection.prepareStatement(insertAuthorSql, Statement.RETURN_GENERATED_KEYS)) {
+                        authorStmt.setString(1, author.getName());
+                        authorStmt.setString(2, author.getPersonNumber());
+                        authorStmt.executeUpdate();
 
-                // Assuming a new author is always added for simplicity
-                try (PreparedStatement authorStmt = connection.prepareStatement(insertAuthorSql, Statement.RETURN_GENERATED_KEYS)) {
-                    authorStmt.setString(1, author.getName());
-                    authorStmt.executeUpdate();
-
-                    ResultSet rs = authorStmt.getGeneratedKeys();
-                    if (rs.next()) {
-                        authorId = rs.getInt(1);
-                    } else {
-                        throw new BooksDbException("Failed to insert author, no ID obtained.");
+                        ResultSet rs = authorStmt.getGeneratedKeys();
+                        if (rs.next()) {
+                            authorId = rs.getInt(1);
+                        } else {
+                            throw new BooksDbException("Failed to insert author, no ID obtained.");
+                        }
                     }
                 }
 
-                // Link book and author
+                // Länka bok och författare
                 try (PreparedStatement linkStmt = connection.prepareStatement(insertBookAuthorSql)) {
                     linkStmt.setInt(1, bookId);
                     linkStmt.setInt(2, authorId);
@@ -218,13 +229,28 @@ public class BooksDbMockImpl implements BooksDbInterface {
         // Update authors and book-author associations
         updateAuthorsAndAssociations(updatedBook);
     }
-    private void updateAuthorsAndAssociations(Book updatedBook) throws BooksDbException {
-        // First, update authors' details
-        for (Author author : updatedBook.getAuthors()) {
-            updateAuthor(author);
-        }
 
-        // Then, update book-author associations
+    //handle author update:
+    private void updateAuthorsAndAssociations(Book updatedBook) throws BooksDbException {
+        // Först, kontrollera och uppdatera varje författares detaljer
+        for (Author author : updatedBook.getAuthors()) {
+            Author existingAuthor = null;
+            try {
+                existingAuthor = findAuthorByPersonNumber(author.getPersonNumber());
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+            if (existingAuthor != null) {
+                // Författaren finns, uppdatera den befintliga författaren
+                author.setAuthorId(existingAuthor.getAuthorId()); // Sätt befintligt ID
+                updateAuthorInDatabase(author); // Uppdatera befintlig författare
+            } else {
+                // Författaren finns inte, skapa en ny
+                int newAuthorId = insertNewAuthorIntoDatabase(author);
+                author.setAuthorId(newAuthorId); // Sätt nytt ID
+            }
+        }
+        // Uppdatera sedan bok-författare associationerna
         updateBookAuthors(updatedBook.getBookId(), updatedBook.getAuthors());
     }
     private void updateBookAuthors(int bookId, List<Author> authors) throws BooksDbException {
@@ -264,6 +290,55 @@ public class BooksDbMockImpl implements BooksDbInterface {
             throw new BooksDbException("Error updating author: " + e.getMessage(), e);
         }
     }
+    public int insertNewAuthorIntoDatabase(Author newAuthor) throws BooksDbException {
+        String sql = "INSERT INTO Author (Name, PersonNumber) VALUES (?, ?)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            pstmt.setString(1, newAuthor.getName());
+            pstmt.setString(2, newAuthor.getPersonNumber());
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new BooksDbException("Creating author failed, no rows affected.");
+            }
+            try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getInt(1);
+                } else {
+                    throw new BooksDbException("Creating author failed, no ID obtained.");
+                }
+            }
+        } catch (SQLException e) {
+            throw new BooksDbException("Error inserting new author: " + e.getMessage(), e);
+        }
+    }
+    public void updateAuthorInDatabase(Author author) throws BooksDbException {
+        String sql = "UPDATE Author SET Name = ?, PersonNumber = ? WHERE AuthorId = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, author.getName());
+            pstmt.setString(2, author.getPersonNumber());
+            pstmt.setInt(3, author.getAuthorId());
+            int affectedRows = pstmt.executeUpdate();
+            if (affectedRows == 0) {
+                throw new BooksDbException("No author was updated. Check the AuthorId: " + author.getAuthorId());
+            }
+        } catch (SQLException e) {
+            throw new BooksDbException("Error updating author: " + e.getMessage(), e);
+        }
+    }
+
+    private Author findAuthorByPersonNumber(String personNumber) throws SQLException {
+        String query = "SELECT * FROM Author WHERE PersonNumber = ?";
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, personNumber);
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                return new Author(resultSet.getInt("AuthorId"), resultSet.getString("Name"), personNumber);
+            }
+            return null; // Ingen befintlig författare hittades
+        }
+    }
+
+
+
 
 
 
@@ -300,10 +375,10 @@ public class BooksDbMockImpl implements BooksDbInterface {
             }
             throw new BooksDbException("Error removing book: " + e.getMessage(), e);
         }
-
         // Remove the book from the in-memory list
         books.remove(book);
     }
+
 
 
 

@@ -21,6 +21,18 @@ public class Author {
 
     // ...
 
+    public void setAuthorId(int authorId) {
+        this.authorId = authorId;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setPersonNumber(String personNumber) {
+        this.personNumber = personNumber;
+    }
+
     public int getAuthorId() {
         return authorId;
     }

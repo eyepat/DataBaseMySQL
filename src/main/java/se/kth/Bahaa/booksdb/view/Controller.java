@@ -5,6 +5,7 @@ import javafx.scene.control.Alert;
 import se.kth.Bahaa.booksdb.model.*;
 
 import java.util.List;
+import java.util.Properties;
 
 import static javafx.scene.control.Alert.AlertType.INFORMATION;
 import static javafx.scene.control.Alert.AlertType.WARNING;
@@ -12,20 +13,27 @@ import static javafx.scene.control.Alert.AlertType.WARNING;
 public class Controller {
     private final BooksPane booksView;
     private final BooksDbInterface booksDb;
-
-    public Controller(BooksDbInterface booksDb, BooksPane booksView) {
+    private Properties dbProperties;
+    public Controller(BooksDbInterface booksDb, BooksPane booksView,Properties dbProperties) {
         this.booksDb = booksDb;
         this.booksView = booksView;
+        this.dbProperties = dbProperties;
     }
 
-    public void connectToDatabase(String url, String user, String pass, String databaseName) {
+    public void connectToDatabase() {
         Thread thread = new Thread(() -> {
             try {
-                boolean isConnected = booksDb.connect(url, user, pass, databaseName);
+                // Extract database connection details from the properties
+                String url = dbProperties.getProperty("db.url");
+                String user = dbProperties.getProperty("db.user");
+                String password = dbProperties.getProperty("db.password");
+                String databaseName = dbProperties.getProperty("db.name"); // Add this line in your properties file
+
+                boolean isConnected = booksDb.connect(url, user, password, databaseName);
                 if (isConnected) {
                     Platform.runLater(() -> {
-                        booksView.showAlertAndWait("Connected to database successfully.", INFORMATION);
-                        // efreshBooksTable();
+                        booksView.showAlertAndWait("Connected to database successfully.", Alert.AlertType.INFORMATION);
+                        // Refresh books table if needed
                     });
                 } else {
                     Platform.runLater(() -> {
@@ -38,8 +46,9 @@ public class Controller {
                 });
             }
         });
-        thread.start(); // Starta tråden för anslutning
+        thread.start(); // Start the thread for connection
     }
+
 
     public static void exitProgram() {
         System.out.println("Exiting the Program!");

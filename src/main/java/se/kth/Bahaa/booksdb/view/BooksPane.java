@@ -35,12 +35,11 @@
         private Controller controller;
         private BooksDpImpl booksDbImpl;
 
-        public BooksPane(BooksDpImpl booksDb,BooksDpImpl booksDbImpl) {
-            this.controller = new Controller(booksDb, this);
-            this.booksDb = booksDb; // Initialize the booksDb field
+        public BooksPane(BooksDpImpl booksDb, BooksDpImpl booksDbImpl, Properties dbProperties) {
+            this.controller = new Controller(booksDb, this, dbProperties); // Pass dbProperties to the controller
+            this.booksDb = booksDb;
             this.booksDbImpl = booksDbImpl;
             this.init();
-
         }
         public void disconnectFromDatabase() {
             try {
@@ -208,58 +207,39 @@
             });
         }
 
-        private void updateAuthorsToString(Book book, String authorsStr) {
-            List<Author> newAuthors = Arrays.stream(authorsStr.split(","))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .map(authorInfo -> {
-                        String[] parts = authorInfo.split(":");
-                        if (parts.length == 2) {
-                            String name = parts[0].trim();
-                            try {
-                                int authorId = Integer.parseInt(parts[1].trim());
-                                return new Author(authorId, name, null); // Assuming the third parameter is not required
-                            } catch (NumberFormatException e) {
-                                // Handle invalid authorId format
-                                return null;
-                            }
-                        } else {
-                            return null;
-                        }
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            book.setAuthors(newAuthors);
+
+
+
+        private void initMenus() {
+            Menu fileMenu = new Menu("File");
+            MenuItem exitItem = new MenuItem("Exit");
+            exitItem.setOnAction(e -> Controller.exitProgram());
+
+            MenuItem connectItem = new MenuItem("Connect to Db");
+            // Call connectToDatabase without parameters since it now uses the properties file
+            connectItem.setOnAction(e -> controller.connectToDatabase());
+
+            MenuItem disconnectItem = new MenuItem("Disconnect");
+            disconnectItem.setOnAction(e ->disconnectFromDatabase());
+            fileMenu.getItems().addAll(exitItem, connectItem, disconnectItem);
+
+            Menu manageMenu = new Menu("Manage");
+            MenuItem addItem = new MenuItem("Add");
+            addItem.setOnAction(e -> showAddBookDialog());
+            MenuItem removeItem = new MenuItem("Remove");
+            removeItem.setOnAction(e -> RemoveSelected());
+            MenuItem updateItem = new MenuItem("Update");
+            updateItem.setOnAction(e -> updateSelectedBook());
+            manageMenu.getItems().addAll(addItem, removeItem, updateItem);
+
+            menuBar = new MenuBar(fileMenu, manageMenu);
         }
 
 
-            private void initMenus() {
-                Menu fileMenu = new Menu("File");
-                MenuItem exitItem = new MenuItem("Exit");
-                exitItem.setOnAction(e -> Controller.exitProgram());
-
-                MenuItem connectItem = new MenuItem("Connect to Db");
-                connectItem.setOnAction(e -> controller.connectToDatabase("jdbc:mysql://localhost:3306/", "clientUser", "password","library"));
-
-                MenuItem disconnectItem = new MenuItem("Disconnect");
-                disconnectItem.setOnAction(e ->disconnectFromDatabase());
-                fileMenu.getItems().addAll(exitItem, connectItem, disconnectItem);
-
-                Menu manageMenu = new Menu("Manage");
-                MenuItem addItem = new MenuItem("Add");
-                addItem.setOnAction(e -> showAddBookDialog());
-                MenuItem removeItem = new MenuItem("Remove");
-                removeItem.setOnAction(e -> RemoveSelected());
-                MenuItem updateItem = new MenuItem("Update");
-                updateItem.setOnAction(e -> updateSelectedBook());
-                manageMenu.getItems().addAll(addItem, removeItem, updateItem);
-
-                menuBar = new MenuBar(fileMenu, manageMenu);
-            }
 
 
 
-    //Manage the add book stuff :)
+        //Manage the add book stuff :)
     private void showAddBookDialog() {
         authorList.clear();
 
@@ -392,7 +372,6 @@
                     }
                 }
             });
-
 
             Button addAuthorButton = new Button("Add Author");
             Button editAuthorButton = new Button("Edit Selected Author");

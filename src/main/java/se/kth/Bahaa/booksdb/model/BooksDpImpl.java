@@ -16,8 +16,12 @@ public class BooksDpImpl implements BooksDbInterface {
     @Override
     public boolean connect(String databaseUrl, String username, String password, String databaseName) throws BooksDbException {
         try {
-            // Construct the full database URL including the database name
-            String fullDatabaseUrl = databaseUrl + databaseName;
+            String fullDatabaseUrl;
+            if (databaseName != null && !databaseName.isEmpty()) {
+                fullDatabaseUrl = databaseUrl + databaseName;
+            } else {
+                fullDatabaseUrl = databaseUrl; // Or handle this case as an error
+            }
 
             connection = DriverManager.getConnection(fullDatabaseUrl, username, password);
             populateBooksFromDatabase();
@@ -26,6 +30,7 @@ public class BooksDpImpl implements BooksDbInterface {
             throw new BooksDbException("Failed to connect to the database: " + e.getMessage(), e);
         }
     }
+
 
     @Override
     public List<Book> getAllBooks() throws BooksDbException {
@@ -120,7 +125,7 @@ public class BooksDpImpl implements BooksDbInterface {
             // Handle exceptions
         }
     }
-
+//controll the bookid and authorid adding
     private int findAvailableBookId() throws SQLException {
         int bookId = 1;
         String query = "SELECT BookId FROM Book WHERE BookId = ?";
@@ -136,16 +141,32 @@ public class BooksDpImpl implements BooksDbInterface {
         }
     }
 
+    private int findAvailableAuthorId() throws SQLException {
+        int authorId = 1;
+        String query = "SELECT AuthorId FROM Author WHERE AuthorId = ?";
+        while (true) {
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+                statement.setInt(1, authorId);
+                ResultSet resultSet = statement.executeQuery();
+                if (!resultSet.next()) {
+                    return authorId; // Return the first available authorId
+                }
+                authorId++;
+            }
+        }
+    }
+
+
     @Override
     public void addBook(Book book) throws BooksDbException {
         String insertBookSql = "INSERT INTO Book (BookId, isbn, title, publication_year, Genre, Rating) VALUES (?, ?, ?, ?, ?, ?)";
-        String insertAuthorSql = "INSERT INTO Author (Name, personNumber) VALUES (?, ?)";
+        String insertAuthorSql = "INSERT INTO Author (AuthorId, Name, PersonNumber) VALUES (?, ?, ?)"; // Include AuthorId
         String insertBookAuthorSql = "INSERT INTO BookAuthor (BookId, AuthorId) VALUES (?, ?)";
 
         try {
             connection.setAutoCommit(false);
 
-            // Hitta ett ledigt bookId
+            // Find an available BookId
             int bookId = findAvailableBookId();
 
             try (PreparedStatement bookStmt = connection.prepareStatement(insertBookSql)) {
@@ -162,27 +183,22 @@ public class BooksDpImpl implements BooksDbInterface {
             for (Author author : book.getAuthors()) {
                 int authorId;
 
-                // Kontrollera om författaren redan finns baserat på personnummer
+                // Check if the author already exists based on person number
                 Author existingAuthor = findAuthorByPersonNumber(author.getPersonNumber());
                 if (existingAuthor != null) {
-                    authorId = existingAuthor.getAuthorId(); // Använd befintlig författares ID
+                    authorId = existingAuthor.getAuthorId(); // Use existing author's ID
                 } else {
-                    // Lägg till ny författare
-                    try (PreparedStatement authorStmt = connection.prepareStatement(insertAuthorSql, Statement.RETURN_GENERATED_KEYS)) {
-                        authorStmt.setString(1, author.getName());
-                        authorStmt.setString(2, author.getPersonNumber());
+                    // Add new author
+                    authorId = findAvailableAuthorId(); // Find an available authorId
+                    try (PreparedStatement authorStmt = connection.prepareStatement(insertAuthorSql)) {
+                        authorStmt.setInt(1, authorId); // Use the found authorId
+                        authorStmt.setString(2, author.getName());
+                        authorStmt.setString(3, author.getPersonNumber());
                         authorStmt.executeUpdate();
-
-                        ResultSet rs = authorStmt.getGeneratedKeys();
-                        if (rs.next()) {
-                            authorId = rs.getInt(1);
-                        } else {
-                            throw new BooksDbException("Failed to insert author, no ID obtained.");
-                        }
                     }
                 }
 
-                // Länka bok och författare
+                // Link book and author
                 try (PreparedStatement linkStmt = connection.prepareStatement(insertBookAuthorSql)) {
                     linkStmt.setInt(1, bookId);
                     linkStmt.setInt(2, authorId);
@@ -208,6 +224,7 @@ public class BooksDpImpl implements BooksDbInterface {
             }
         }
     }
+
 
 
 

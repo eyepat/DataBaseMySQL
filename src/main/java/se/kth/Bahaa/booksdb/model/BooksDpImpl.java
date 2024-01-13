@@ -293,20 +293,7 @@ public class BooksDpImpl implements BooksDbInterface {
         }
     }
 
-    public void updateAuthor(Author author) throws BooksDbException {
-        String updateAuthorSql = "UPDATE Author SET Name = ?, PersonNumber = ? WHERE AuthorId = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(updateAuthorSql)) {
-            stmt.setString(1, author.getName());
-            stmt.setString(2, author.getPersonNumber());
-            stmt.setInt(3, author.getAuthorId());
-            int rowsAffected = stmt.executeUpdate();
-            if (rowsAffected == 0) {
-                throw new BooksDbException("No author was updated. Check the AuthorId: " + author.getAuthorId());
-            }
-        } catch (SQLException e) {
-            throw new BooksDbException("Error updating author: " + e.getMessage(), e);
-        }
-    }
+
     public int insertNewAuthorIntoDatabase(Author newAuthor) throws BooksDbException {
         String sql = "INSERT INTO Author (Name, PersonNumber) VALUES (?, ?)";
         try (PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -554,11 +541,6 @@ public class BooksDpImpl implements BooksDbInterface {
 
         return result;
     }
-
-
-
-
-
 
     private static final Book[] DATA = {
             new Book(1, "123456789", "Databases Illuminated", new Date(2018, 1, 1)),

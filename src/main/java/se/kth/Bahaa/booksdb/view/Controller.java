@@ -14,7 +14,8 @@ public class Controller {
     private final BooksPane booksView;
     private final BooksDbInterface booksDb;
     private Properties dbProperties;
-    public Controller(BooksDbInterface booksDb, BooksPane booksView,Properties dbProperties) {
+
+    public Controller(BooksDbInterface booksDb, BooksPane booksView, Properties dbProperties) {
         this.booksDb = booksDb;
         this.booksView = booksView;
         this.dbProperties = dbProperties;
@@ -59,7 +60,7 @@ public class Controller {
         Thread thread = new Thread(() -> {
             try {
                 booksDb.addBook(book);
-                Platform.runLater(this::refreshBooksTable);
+                //Platform.runLater(this::refreshBooksTable);
             } catch (BooksDbException e) {
                 Platform.runLater(() -> {
                     booksView.showAlertAndWait("Error adding book: " + e.getMessage(), Alert.AlertType.ERROR);
@@ -73,7 +74,7 @@ public class Controller {
         Thread thread = new Thread(() -> {
             try {
                 booksDb.deleteBook(book);
-                Platform.runLater(this::refreshBooksTable);
+                //Platform.runLater(this::refreshBooksTable);
             } catch (BooksDbException e) {
                 Platform.runLater(() -> {
                     booksView.showAlertAndWait("Error removing book: " + e.getMessage(), Alert.AlertType.ERROR);
@@ -87,7 +88,7 @@ public class Controller {
         Thread thread = new Thread(() -> {
             try {
                 booksDb.updateBook(updatedBook);
-                Platform.runLater(this::refreshBooksTable);
+                //Platform.runLater(this::refreshBooksTable);
             } catch (BooksDbException e) {
                 Platform.runLater(() -> {
                     booksView.showAlertAndWait("Error updating book: " + e.getMessage(), Alert.AlertType.ERROR);
@@ -116,42 +117,44 @@ public class Controller {
     public void onSearchSelected(String searchFor, SearchMode mode) {
         Thread thread = new Thread(() -> {
             try {
-                // Kolla efter en icke-tom söksträng, förutom för betyg där en enstaka siffra är giltig
-                if (searchFor != null && (mode != SearchMode.RATING || !searchFor.trim().isEmpty())) {
-                    List<Book> result = null;
-                    switch (mode) {
-                        case Title:
-                            result = booksDb.searchBooksByTitle(searchFor);
-                            break;
-                        case ISBN:
-                            result = booksDb.searchBookByISBN(searchFor);
-                            break;
-                        case Author:
-                            result = booksDb.searchBooksByAuthor(searchFor);
-                            break;
-                        case GENRE:
-                            Genre genre = Genre.valueOf(searchFor.toUpperCase());
-                            result = booksDb.searchBooksByGenre(genre);
-                            break;
-                        case RATING:
-                            int rating = Integer.parseInt(searchFor);
-                            result = booksDb.searchBooksByRating(rating);
-                            break;
-                        // ... andra fall ...
-                    }
-                    if (result == null || result.isEmpty()) {
-                        Platform.runLater(() -> {
-                            booksView.showAlertAndWait("No results found.", INFORMATION);
-                        });
-                    } else {
-                        List<Book> finalResult = result;
-                        Platform.runLater(() -> {
-                            booksView.displayBooks(finalResult);
-                        });
-                    }
-                } else {
+                // Check if the search string is null or empty
+                if ((mode != SearchMode.RATING && (searchFor == null || searchFor.trim().isEmpty()))) {
                     Platform.runLater(() -> {
-                        booksView.showAlertAndWait("Enter a search string!", WARNING);
+                        booksView.showAlertAndWait("Enter a search string!", Alert.AlertType.WARNING);
+                    });
+                    return; // Exit the method if the search string is empty
+                }
+
+                List<Book> result = null;
+                switch (mode) {
+                    case Title:
+                        result = booksDb.searchBooksByTitle(searchFor);
+                        break;
+                    case ISBN:
+                        result = booksDb.searchBookByISBN(searchFor);
+                        break;
+                    case Author:
+                        result = booksDb.searchBooksByAuthor(searchFor);
+                        break;
+                    case GENRE:
+                        Genre genre = Genre.valueOf(searchFor.toUpperCase());
+                        result = booksDb.searchBooksByGenre(genre);
+                        break;
+                    case RATING:
+                        int rating = Integer.parseInt(searchFor);
+                        result = booksDb.searchBooksByRating(rating);
+                        break;
+                    // ... other cases ...
+                }
+
+                if (result == null || result.isEmpty()) {
+                    Platform.runLater(() -> {
+                        booksView.showAlertAndWait("No results found.", Alert.AlertType.INFORMATION);
+                    });
+                } else {
+                    List<Book> finalResult = result;
+                    Platform.runLater(() -> {
+                        booksView.displayBooks(finalResult);
                     });
                 }
             } catch (NumberFormatException e) {
@@ -168,6 +171,6 @@ public class Controller {
                 });
             }
         });
-        thread.start(); // Starta tråden för att utföra sökningen
+        thread.start(); // Start the thread to perform the search
     }
 }

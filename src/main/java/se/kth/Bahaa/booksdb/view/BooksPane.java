@@ -45,7 +45,7 @@
             try {
                 booksDb.disconnect();
             } catch (BooksDbException e) {
-                // Handle the exception if needed
+
                 e.printStackTrace();
             }
         }

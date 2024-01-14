@@ -7,8 +7,7 @@ import se.kth.Bahaa.booksdb.model.*;
 import java.util.List;
 import java.util.Properties;
 
-import static javafx.scene.control.Alert.AlertType.INFORMATION;
-import static javafx.scene.control.Alert.AlertType.WARNING;
+
 
 public class Controller {
     private final BooksPane booksView;

@@ -109,11 +109,11 @@ public class BooksDpImpl implements BooksDbInterface {
             while (resultSet.next()) {
                 String isbn = resultSet.getString("isbn");
                 String title = resultSet.getString("title");
-                Date publishedDate = resultSet.getDate("publication_year"); // Assuming the column name is "published"
-                // Add more fields as needed
+                Date publishedDate = resultSet.getDate("publication_year");
+
 
                 // Create a Book object and add it to the data model
-                Book book = new Book(isbn, title, publishedDate); // Create the Book object with appropriate fields
+                Book book = new Book(isbn, title, publishedDate);
                 books.add(book); // Add the book to the data model
             }
 
@@ -125,7 +125,7 @@ public class BooksDpImpl implements BooksDbInterface {
             // Handle exceptions
         }
     }
-//controll the bookid and authorid adding
+
     private int findAvailableBookId() throws SQLException {
         int bookId = 1;
         String query = "SELECT BookId FROM Book WHERE BookId = ?";
@@ -374,7 +374,7 @@ public class BooksDpImpl implements BooksDbInterface {
                 try {
                     connection.rollback();
                 } catch (SQLException ex) {
-                    // Handle rollback exception
+
                 }
             }
             throw new BooksDbException("Error removing book: " + e.getMessage(), e);
@@ -542,17 +542,5 @@ public class BooksDpImpl implements BooksDbInterface {
         return result;
     }
 
-    private static final Book[] DATA = {
-            new Book(1, "123456789", "Databases Illuminated", new Date(2018, 1, 1)),
-            new Book(2, "234567891", "Dark Databases", new Date(1990, 1, 1)),
-            new Book(3, "456789012", "The buried giant", new Date(2000, 1, 1)),
-            new Book(4, "567890123", "Never let me go", new Date(2000, 1, 1)),
-            new Book(5, "678901234", "The remains of the day", new Date(2000, 1, 1)),
-            new Book(6, "234567890", "Alias Grace", new Date(2000, 1, 1)),
-            new Book(7, "345678911", "The handmaids tale", new Date(2010, 1, 1)),
-            new Book(8, "345678901", "Shuggie Bain", new Date(2020, 1, 1)),
-            new Book(9, "345678912", "Microserfs", new Date(2000, 1, 1)),
 
-
-    };
 }

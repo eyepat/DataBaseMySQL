@@ -226,8 +226,6 @@ public class BooksDpImpl implements BooksDbInterface {
     }
 
 
-
-
     public void updateBook(Book updatedBook) throws BooksDbException {
         // Update book details first
         String updateBookSql = "UPDATE Book SET isbn = ?, title = ?, publication_year = ?, Genre = ?, Rating = ? WHERE BookId = ?";
@@ -340,10 +338,6 @@ public class BooksDpImpl implements BooksDbInterface {
             return null; // Ingen befintlig författare hittades
         }
     }
-
-
-
-
 
 
 
